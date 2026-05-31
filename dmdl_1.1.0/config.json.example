@@ -1,0 +1,35 @@
+{
+  "defaults": {
+    "quality": "1080p",
+    "subtitle": true,
+    "thumbnail": true,
+    "playlist": false,
+    "download_dir": "downloads",
+    "node_id": "local",
+    "max_concurrency": 3,
+    "auto_load_plugins": true
+  },
+  "plugins": [
+    "my_project.adapters:CustomAdapter"
+  ],
+  "targets": [
+    {
+      "url": "https://youtube.com/watch?v=example",
+      "requested_type": "youtube_video"
+    },
+    {
+      "url": "https://www.instagram.com/reel/example/",
+      "requested_type": "video",
+      "quality": "720p",
+      "subtitle": false
+    },
+    {
+      "url": "https://example.com/sample.pdf",
+      "requested_type": "pdf",
+      "output_dir": "downloads/docs",
+      "options": {
+        "timeout": 120
+      }
+    }
+  ]
+}
