@@ -1,0 +1,50 @@
+{
+  "defaults": {
+    "quality": "1080p",
+    "subtitle": true,
+    "thumbnail": true,
+    "playlist": false,
+    "node_id": "local",
+    "max_concurrency": 3,
+    "auto_load_plugins": true
+  },
+  "paths": {
+    "download_dir": "downloads",
+    "results_file": "download_results.json",
+    "by_requested_type": {
+      "youtube_video": "downloads/youtube",
+      "video": "downloads/video",
+      "pdf": "downloads/docs",
+      "image": "downloads/images",
+      "music": "downloads/music",
+      "article": "downloads/articles"
+    },
+    "by_adapter_hint": {
+      "telegram": "downloads/telegram"
+    }
+  },
+  "plugins": [
+    "my_project.adapters:CustomAdapter"
+  ],
+  "targets": [
+    {
+      "url": "https://youtube.com/watch?v=example",
+      "requested_type": "youtube_video"
+    },
+    {
+      "url": "https://example.com/sample.pdf",
+      "requested_type": "pdf"
+    },
+    {
+      "url": "https://t.me/c/1234567890/42",
+      "requested_type": "video",
+      "adapter_hint": "telegram",
+      "output_dir": "downloads/telegram/private_room",
+      "options": {
+        "telegram_api_id": "123456",
+        "telegram_api_hash": "YOUR_API_HASH",
+        "telegram_session": "dmdl_telegram"
+      }
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "defaults": {
+    "quality": "1080p",
+    "subtitle": true,
+    "thumbnail": true,
+    "playlist": false,
+    "node_id": "local",
+    "max_concurrency": 3,
+    "auto_load_plugins": true
+  },
+  "paths": {
+    "download_dir": "downloads",
+    "results_file": "download_results.json",
+    "by_requested_type": {
+      "youtube_video": "downloads/youtube",
+      "video": "downloads/video",
+      "pdf": "downloads/docs",
+      "image": "downloads/images",
+      "music": "downloads/music",
+      "article": "downloads/articles"
+    },
+    "by_adapter_hint": {
+      "telegram": "downloads/telegram"
+    },
+    "named": {
+      "private_room": "downloads/telegram/private_room"
+    }
+  },
+  "plugins": [
+    "my_project.adapters:CustomAdapter"
+  ],
+  "include": [
+    "links.json"
+  ]
+}
