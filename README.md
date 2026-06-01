@@ -18,7 +18,7 @@ DMDL is a lightweight Python library for downloading media, extracting metadata,
 ## Installation
 
 ```bash
-pip install dmdl
+pip install git+https://github.com/dlegoreamlab/dmdl.git
 ```
 
 For local development:
