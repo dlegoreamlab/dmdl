@@ -2,6 +2,9 @@
   "defaults": {
     "quality": "1080p",
     "subtitle": true,
+    "subtitle_langs": ["ko", "en"],
+    "subtitle_format": "best",
+    "merge_output_format": "mp4",
     "thumbnail": true,
     "playlist": false,
     "node_id": "local",

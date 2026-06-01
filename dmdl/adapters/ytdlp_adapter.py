@@ -34,35 +34,33 @@ class YtDlpAdapter:
 
     def _download_sync(self, task: DownloadTask) -> Dict[str, Any]:
         out_dir = ensure_dir(task.output_dir)
-        quality = str(task.options.get("quality", "best"))
+        quality = task.options.get("quality", "best")
         subtitle = bool(task.options.get("subtitle", True))
+        subtitle_langs = self._normalize_subtitle_langs(task.options.get("subtitle_langs", ["ko", "en"]))
+        subtitle_format = str(task.options.get("subtitle_format", "best"))
+        format_selector = task.options.get("format_selector")
         thumbnail = bool(task.options.get("thumbnail", True))
         playlist = bool(task.options.get("playlist", False))
         timeout = int(task.options.get("timeout", 60))
-
-        format_map = {
-            "1080p": "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best",
-            "720p": "bestvideo[height<=720]+bestaudio/best[height<=720]/best",
-            "480p": "bestvideo[height<=480]+bestaudio/best[height<=480]/best",
-            "best": "bestvideo+bestaudio/best",
-        }
+        merge_output_format = str(task.options.get("merge_output_format", "mp4"))
 
         opts: Dict[str, Any] = {
             "outtmpl": str(out_dir / "%(title)s [%(id)s].%(ext)s"),
-            "format": format_map.get(quality, quality),
+            "format": self._resolve_format_selector(quality, format_selector),
             "noplaylist": not playlist,
             "writethumbnail": thumbnail,
             "quiet": True,
             "no_warnings": True,
             "socket_timeout": timeout,
-            "merge_output_format": "mp4",
+            "merge_output_format": merge_output_format,
         }
         if subtitle:
             opts.update(
                 {
                     "writesubtitles": True,
                     "writeautomaticsub": True,
-                    "subtitleslangs": ["ko", "en"],
+                    "subtitleslangs": subtitle_langs,
+                    "subtitlesformat": subtitle_format,
                 }
             )
 
@@ -72,10 +70,14 @@ class YtDlpAdapter:
             primary = entries[0]
             saved_path = ydl.prepare_filename(primary)
             prepared_path = Path(saved_path)
-            if prepared_path.suffix.lower() != ".mp4":
-                mp4_candidate = prepared_path.with_suffix(".mp4")
-                if mp4_candidate.exists():
-                    saved_path = str(mp4_candidate)
+            if prepared_path.suffix.lower() != f".{merge_output_format.lower()}":
+                merged_candidate = prepared_path.with_suffix(f".{merge_output_format.lower()}")
+                if merged_candidate.exists():
+                    saved_path = str(merged_candidate)
+                else:
+                    mp4_candidate = prepared_path.with_suffix(".mp4")
+                    if mp4_candidate.exists():
+                        saved_path = str(mp4_candidate)
 
         saved_file = Path(saved_path)
         video_size = saved_file.stat().st_size if saved_file.exists() else None
@@ -114,6 +116,9 @@ class YtDlpAdapter:
             "webpage_url": primary.get("webpage_url") or task.url,
             "thumbnail_path": str(thumbnail_path) if thumbnail_path else None,
             "playlist_count": len(entries) if len(entries) > 1 else None,
+            "requested_quality": str(quality),
+            "requested_subtitle_langs": subtitle_langs if subtitle else [],
+            "requested_subtitle_format": subtitle_format if subtitle else None,
         }
 
         return {
@@ -158,3 +163,33 @@ class YtDlpAdapter:
             if hostname == domain or hostname.endswith(f".{domain}"):
                 return platform
         return "unknown"
+
+    def _normalize_subtitle_langs(self, subtitle_langs: Any) -> List[str]:
+        if isinstance(subtitle_langs, str):
+            items = [item.strip() for item in subtitle_langs.split(",") if item.strip()]
+            return items or ["ko", "en"]
+        if isinstance(subtitle_langs, (list, tuple, set)):
+            items = [str(item).strip() for item in subtitle_langs if str(item).strip()]
+            return items or ["ko", "en"]
+        return ["ko", "en"]
+
+    def _resolve_format_selector(self, quality: Any, format_selector: Any) -> str:
+        if format_selector:
+            return str(format_selector)
+
+        quality_text = str(quality).strip().lower()
+        quality_aliases = {
+            "best": "bestvideo+bestaudio/best",
+            "source": "bestvideo+bestaudio/best",
+            "worst": "worstvideo+worstaudio/worst",
+            "audio": "bestaudio/best",
+            "audio_only": "bestaudio/best",
+        }
+        if quality_text in quality_aliases:
+            return quality_aliases[quality_text]
+
+        numeric = "".join(ch for ch in quality_text if ch.isdigit())
+        if numeric:
+            return f"bestvideo[height<={int(numeric)}]+bestaudio/best[height<={int(numeric)}]/best"
+
+        return str(quality)

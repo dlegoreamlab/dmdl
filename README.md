@@ -36,11 +36,20 @@ from dmdl import Downloader
 
 
 async def main() -> None:
-    downloader = Downloader(download_dir="downloads", max_concurrency=3)
+    downloader = Downloader(
+        download_dir="downloads",
+        max_concurrency=3,
+        quality="1080p",
+        subtitle=True,
+        subtitle_langs=["ko", "en"],
+        subtitle_format="srt",
+    )
 
     result = await downloader.download(
         url="https://youtube.com/watch?v=example",
         requested_type="youtube_video",
+        quality="720p",
+        subtitle_langs=["ko", "en", "ja"],
     )
 
     print(result.success)
@@ -97,6 +106,9 @@ python run.py
   "defaults": {
     "quality": "1080p",
     "subtitle": true,
+    "subtitle_langs": ["ko", "en"],
+    "subtitle_format": "best",
+    "merge_output_format": "mp4",
     "thumbnail": true,
     "playlist": false,
     "node_id": "local",
@@ -129,7 +141,10 @@ python run.py
   "targets": [
     {
       "url": "https://youtube.com/watch?v=example",
-      "requested_type": "youtube_video"
+      "requested_type": "youtube_video",
+      "quality": "720p",
+      "subtitle_langs": ["ko", "en"],
+      "subtitle_format": "srt"
     },
     {
       "url": "https://example.com/sample.pdf",
@@ -174,6 +189,8 @@ DMDL
 - `requested_type` must be one of: `article`, `image`, `music`, `pdf`, `video`, `youtube_video`
 - Direct file downloads support custom request headers through `options.headers`
 - Duplicate filenames are automatically renamed with numeric suffixes
+- 코드에서는 `Downloader(...)` 기본값이나 `download(..., quality="720p", subtitle_langs=[...])`처럼 호출별 옵션으로 화질/자막을 바로 제어할 수 있습니다
+- 설정 파일에서는 `quality`, `subtitle`, `subtitle_langs`, `subtitle_format`, `format_selector`, `merge_output_format`를 타깃별로 지정할 수 있습니다
 - `config/` 폴더를 넘기면 `settings.json`, `links.json`, `links/*.json`, `targets/*.json`를 자동으로 병합합니다
 - 대상별 저장 경로는 `paths.by_requested_type`, `paths.by_adapter_hint`, `paths.named`로 분리할 수 있습니다
 - Plugin entry points should use the `dmdl.adapters` group

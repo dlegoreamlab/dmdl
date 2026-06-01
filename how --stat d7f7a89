@@ -1,0 +1,55 @@
+[33mcommit 805b962fd6e1999ad02456be194cab3a806a7a4c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: dlegoream_lab <dlegoream.lab@gmail.com>
+Date:   Mon Jun 1 08:44:39 2026 +0900
+
+    Release 1.1.1
+
+ .gitignore                        |   7 [32m++[m
+ README.md                         | 232 [32m+++++++++++++++++++++++++++++++++++++++++[m
+ config.json.example               |  50 [32m+++++++++[m
+ config/links.json.example         |  30 [32m++++++[m
+ config/settings.json.example      |  35 [32m+++++++[m
+ dmdl/__init__.py                  |  26 [32m+++++[m
+ dmdl/adapters/__init__.py         |  11 [32m++[m
+ dmdl/adapters/direct_adapter.py   |  61 [32m+++++++++++[m
+ dmdl/adapters/generic_adapter.py  |  21 [32m++++[m
+ dmdl/adapters/telegram_adapter.py | 380 [32m++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++[m
+ dmdl/adapters/ytdlp_adapter.py    | 160 [32m+++++++++++++++++++++++++++++[m
+ dmdl/cli.py                       |  94 [32m+++++++++++++++++[m
+ dmdl/config_loader.py             | 194 [32m+++++++++++++++++++++++++++++++++++[m
+ dmdl/core/__init__.py             |   4 [32m+[m
+ dmdl/core/downloader.py           | 125 [32m+++++++++++++++++++++++[m
+ dmdl/core/manager.py              | 171 [32m+++++++++++++++++++++++++++++++[m
+ dmdl/core/metadata.py             |  46 [32m+++++++++[m
+ dmdl/core/queue.py                |  34 [32m++++++[m
+ dmdl/events/__init__.py           |   0
+ dmdl/events/completed.py          |  12 [32m+++[m
+ dmdl/events/failed.py             |  11 [32m++[m
+ dmdl/events/progress.py           |  15 [32m+++[m
+ dmdl/logging/__init__.py          |   9 [32m++[m
+ dmdl/logging/base.py              |  17 [32m+++[m
+ dmdl/logging/default.py           |  52 [32m++++++++++[m
+ dmdl/models/__init__.py           |   0
+ dmdl/models/download_result.py    |  33 [32m++++++[m
+ dmdl/models/download_task.py      |  40 [32m++++++++[m
+ dmdl/models/meta_schema.py        | 342 [32m+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++[m
+ dmdl/models/schema.py             |  72 [32m+++++++++++++[m
+ dmdl/plugins/__init__.py          |  11 [32m++[m
+ dmdl/plugins/base.py              |  21 [32m++++[m
+ dmdl/plugins/builtin.py           |  11 [32m++[m
+ dmdl/plugins/loader.py            |  35 [32m+++++++[m
+ dmdl/plugins/registry.py          |  78 [32m++++++++++++++[m
+ dmdl/utils/__init__.py            |   0
+ dmdl/utils/filename.py            |  39 [32m+++++++[m
+ dmdl/utils/hashing.py             |   9 [32m++[m
+ dmdl/utils/path.py                |  35 [32m+++++++[m
+ dmdl/utils/validation.py          |  28 [32m+++++[m
+ pyproject.toml                    |  43 [32m++++++++[m
+ run.py                            |   5 [32m+[m
+ tests/test_config_loader.py       |  93 [32m+++++++++++++++++[m
+ tests/test_manager.py             |  38 [32m+++++++[m
+ tests/test_metadata.py            |  22 [32m++++[m
+ tests/test_plugins.py             |  72 [32m+++++++++++++[m
+ tests/test_telegram_adapter.py    |  43 [32m++++++++[m
+ tests/test_utils.py               |  33 [32m++++++[m
+ 48 files changed, 2900 insertions(+)

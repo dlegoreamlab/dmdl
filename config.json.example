@@ -2,6 +2,9 @@
   "defaults": {
     "quality": "1080p",
     "subtitle": true,
+    "subtitle_langs": ["ko", "en"],
+    "subtitle_format": "best",
+    "merge_output_format": "mp4",
     "thumbnail": true,
     "playlist": false,
     "node_id": "local",
@@ -29,7 +32,10 @@
   "targets": [
     {
       "url": "https://youtube.com/watch?v=example",
-      "requested_type": "youtube_video"
+      "requested_type": "youtube_video",
+      "quality": "720p",
+      "subtitle_langs": ["ko", "en"],
+      "subtitle_format": "srt"
     },
     {
       "url": "https://example.com/sample.pdf",

@@ -23,6 +23,10 @@ def build_downloader(cfg: dict) -> Downloader:
     return Downloader(
         quality=defaults.get("quality", "1080p"),
         subtitle=defaults.get("subtitle", True),
+        subtitle_langs=defaults.get("subtitle_langs", ["ko", "en"]),
+        subtitle_format=defaults.get("subtitle_format", "best"),
+        format_selector=defaults.get("format_selector"),
+        merge_output_format=defaults.get("merge_output_format", "mp4"),
         thumbnail=defaults.get("thumbnail", True),
         playlist=defaults.get("playlist", False),
         download_dir=resolve_default_download_dir(cfg),
