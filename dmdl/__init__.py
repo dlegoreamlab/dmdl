@@ -8,7 +8,7 @@ from .models.meta_schema import META_SCHEMA
 from .models.schema import FileRecord
 from .plugins import AdapterRegistry
 
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 
 __all__ = [
     "Downloader",

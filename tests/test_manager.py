@@ -23,7 +23,7 @@ class StubAdapter:
 
 
 def test_run_many_preserves_order() -> None:
-    manager = DownloadManager()
+    manager = DownloadManager(auto_load_plugins=False)
     manager.adapters = [StubAdapter()]
     tasks = [
         DownloadTask(url='https://example.com/1.pdf', requested_type='pdf'),
@@ -36,3 +36,5 @@ def test_run_many_preserves_order() -> None:
         'https://example.com/2.pdf',
     ]
     assert all(item.success for item in results)
+    assert results[0].record is not None
+    assert results[0].record.meta['_schema']['name'] == 'pdf'
