@@ -31,8 +31,17 @@ class TelegramAdapter:
     }
 
     def can_handle(self, task: DownloadTask) -> bool:
-        hostname = (urlparse(task.url).hostname or "").lower()
-        return hostname in self.SUPPORTED_HOSTS
+        parsed = urlparse(task.url)
+        scheme = (parsed.scheme or "").lower()
+        hostname = (parsed.hostname or "").lower()
+        if hostname in self.SUPPORTED_HOSTS:
+            return True
+        # DICL emits telegram://chat/<chat_id>/message/<message_id> permalinks
+        # for private chats without a public username. Route them through
+        # this adapter as well.
+        if scheme == "telegram":
+            return True
+        return False
 
     async def download(self, task: DownloadTask) -> Dict[str, Any]:
         cfg = self._resolve_config(task)
@@ -132,10 +141,26 @@ class TelegramAdapter:
 
     async def _resolve_entity(self, client: TelegramClient, task: DownloadTask, cfg: Dict[str, Any]):
         parsed = urlparse(task.url)
+        scheme = (parsed.scheme or "").lower()
         parts = [part for part in parsed.path.split("/") if part]
 
         chat_ref = cfg.get("chat")
-        if not chat_ref and parts:
+
+        # 1) DICL FileRecord relation passed through task.context has the
+        #    highest priority: it carries an explicit chat_id we can trust.
+        if not chat_ref:
+            relation = self._dicl_relation(task)
+            relation_chat_id = relation.get("chat_id") if relation else None
+            if relation_chat_id is not None:
+                chat_ref = self._normalize_chat_id(relation_chat_id)
+
+        # 2) telegram://chat/<chat_id>/message/<msg_id> permalink emitted by
+        #    DICL when no public username is available.
+        if not chat_ref and scheme == "telegram" and parsed.netloc == "chat" and parts:
+            chat_ref = self._normalize_chat_id(parts[0])
+
+        # 3) Standard t.me parsing (unchanged behaviour for http/https URLs).
+        if not chat_ref and scheme in {"http", "https"} and parts:
             if parts[0] == "c" and len(parts) >= 2 and parts[1].isdigit():
                 chat_ref = int(f"-100{parts[1]}")
             elif parts[0].startswith("+"):
@@ -157,7 +182,7 @@ class TelegramAdapter:
 
         if not chat_ref:
             raise ValueError(
-                "대상 채팅을 해석할 수 없습니다. t.me/<username>/<msg_id>, t.me/c/<internal_id>/<msg_id> 형식을 사용하거나 telegram_chat 옵션을 지정하세요."
+                "대상 채팅을 해석할 수 없습니다. t.me/<username>/<msg_id>, t.me/c/<internal_id>/<msg_id>, telegram://chat/<chat_id>/message/<msg_id> 형식을 사용하거나 telegram_chat 옵션을 지정하세요."
             )
 
         entity = await self._call_with_floodwait(lambda: client.get_entity(chat_ref), cfg)
@@ -179,6 +204,7 @@ class TelegramAdapter:
 
     def _resolve_message_ids(self, task: DownloadTask, cfg: Dict[str, Any]) -> list[int]:
         parsed = urlparse(task.url)
+        scheme = (parsed.scheme or "").lower()
         parts = [part for part in parsed.path.split("/") if part]
 
         raw_ids = cfg.get("message_ids")
@@ -190,7 +216,21 @@ class TelegramAdapter:
         elif isinstance(raw_ids, str) and raw_ids.strip():
             ids.extend(int(item.strip()) for item in raw_ids.split(",") if item.strip())
 
-        if parts and parts[-1].isdigit():
+        # DICL relation passed via task.context can provide the message_id
+        # directly, even when the permalink path does not contain it.
+        relation = self._dicl_relation(task)
+        relation_msg_id = relation.get("message_id") if relation else None
+        if relation_msg_id is not None:
+            try:
+                ids.append(int(relation_msg_id))
+            except (TypeError, ValueError):
+                pass
+
+        if scheme == "telegram" and parsed.netloc == "chat":
+            # telegram://chat/<chat_id>/message/<message_id>
+            if len(parts) >= 3 and parts[1] == "message" and parts[2].isdigit():
+                ids.append(int(parts[2]))
+        elif parts and parts[-1].isdigit():
             ids.append(int(parts[-1]))
 
         from_message_id = cfg.get("from_message_id")
@@ -352,6 +392,39 @@ class TelegramAdapter:
         if content_type == "application/pdf" or suffix == ".pdf":
             return "pdf"
         return "article"
+
+    @staticmethod
+    def _dicl_relation(task: DownloadTask) -> Dict[str, Any]:
+        """Extract the DICL telegram relation block from task.context, if any.
+
+        DICL emits ``FileRecord.meta.relation = {"platform": "telegram",
+        "chat_id": ..., "message_id": ...}``. The
+        ``Downloader.download_from_file_record`` bridge forwards that block
+        under ``task.context['dicl_relation']``.
+        """
+        context = task.context or {}
+        relation = context.get("dicl_relation") or context.get("relation") or {}
+        if isinstance(relation, dict) and relation.get("platform") in {None, "telegram"}:
+            return relation
+        return {}
+
+    @staticmethod
+    def _normalize_chat_id(value: Any) -> Any:
+        """Best-effort conversion of a Telegram chat_id to the form Telethon
+        accepts (``-100<channel_id>`` for channels/supergroups).
+        """
+        if isinstance(value, int):
+            return value
+        text = str(value).strip()
+        if not text:
+            return text
+        if text.lstrip("-").isdigit():
+            number = int(text)
+            # Channel/supergroup ids must start with -100 for Telethon.
+            if number > 0:
+                return int(f"-100{number}")
+            return number
+        return text
 
     async def _call_with_floodwait(
         self,

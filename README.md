@@ -244,6 +244,65 @@ DMDL now includes a built-in `TelegramAdapter` based on Telethon.
 
 For user-account downloads, prepare a logged-in Telethon session file or session string first. A session string can also be supplied with `telegram_session_string` or the `DMDL_TELEGRAM_SESSION_STRING` environment variable.
 
+## DICL bridge (Telegram FileRecord → DMDL download)
+
+DMDL can now consume DFSS `FileRecord` objects emitted by
+[DICL](https://github.com/dlegoreamlab/dicl)'s telegram collector and download
+the referenced media directly, without manually re-parsing the permalink.
+
+What the bridge handles for you:
+
+*   Accepts both `https://t.me/<username>/<id>` permalinks and
+    `telegram://chat/<chat_id>/message/<id>` pseudo URLs (DICL emits the
+    latter for private chats without a public username)
+*   Forwards `FileRecord.meta.relation` (`platform`, `chat_id`, `message_id`)
+    into `DownloadTask.context['dicl_relation']` so the chat and message id
+    are recovered even when the URL alone is not enough
+*   Maps DFSS record types onto DMDL `requested_type`: `image`, `video`,
+    `pdf` and `music` pass through, while DFSS `audio` is folded into
+    DMDL `music` (DMDL has no dedicated audio type)
+
+### Example
+
+```python
+import asyncio
+
+from dicl import DICL
+from dmdl import Downloader
+
+async def main() -> None:
+    dicl = DICL(use_heavy=False)
+    collected = dicl.collect_telegram(
+        api_id=123456,
+        api_hash="YOUR_API_HASH",
+        entity="public_channel_or_chat",
+        limit=50,
+    )
+
+    downloader = Downloader(
+        download_dir="downloads/telegram",
+        max_concurrency=2,
+    )
+
+    results = await downloader.download_from_file_records(
+        collected.media_records,
+        options={
+            "telegram_api_id": 123456,
+            "telegram_api_hash": "YOUR_API_HASH",
+            "telegram_session": "dmdl_telegram",
+        },
+    )
+
+    for item in results:
+        print(item.success, item.saved_path)
+
+asyncio.run(main())
+```
+
+For a single record use `Downloader.download_from_file_record(record, ...)`.
+Both helpers accept either a `dfss.FileRecord` instance or a plain dict that
+mirrors its shape (`{"path": ..., "type": ..., "meta": {...}}`).
+
 ## License
 
 Apache License 2.0
